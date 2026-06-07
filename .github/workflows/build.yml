@@ -1,0 +1,43 @@
+name: Build Kernel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            git curl wget zip unzip bc bison flex build-essential libssl-dev libelf-dev cpio
+
+      - name: Clone Clang
+        run: |
+          mkdir -p clang-r547379
+          cd clang-r547379
+
+          wget -O clang-r547379.tar.gz \
+          "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz"
+
+          tar -xzf clang-r547379.tar.gz
+          rm clang-r547379.tar.gz
+
+      - name: Build
+        run: |
+          export KERNEL_DIR="$GITHUB_WORKSPACE"
+          chmod +x build.sh
+          ./build.sh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel
+          path: "sweet-*.zip"
